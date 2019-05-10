@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="myWorld.dao.UserDao">
+	
+	<insert id="insertUser" parameterType="myWorld.entity.UserVO" 
+						useGeneratedKeys="true" keyProperty="id">
+		insert into user
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="userCount != null">userCount,</if>
+			<if test="pwd != null">pwd,</if>
+			<if test="realName != null">realName,</if>
+			<if test="e_mail != null">e_mail,</if>	
+			<if test="mobilePhone != null">mobilePhone,</if>	
+			<if test="qq != null">qq,</if>	
+			<if test="age != null">age,</if>
+			<if test="sex != null">sex,</if>
+								createTime,			
+			
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="userCount != null">#{userCount},</if>
+			<if test="pwd != null">#{pwd},</if>
+			<if test="realName != null">#{realName},</if>
+			<if test="e_mail != null">#{e_mail},</if>
+			<if test="mobilePhone != null">#{mobilePhone},</if>
+			<if test="qq != null">#{qq},</if>
+			<if test="age != null">#{age},</if>
+			<if test="sex != null">#{sex},</if>
+								now(),
+		</trim>
+	</insert>
+	<select id="selectU" parameterType="myWorld.entity.UserVO"
+        resultType="myWorld.entity.UserVO">
+        select 	u.userCount,
+        		u.realName,
+        		u.pwd,
+        		u.e_mail,
+        		u.sex,
+        		u.age,
+        		u.mobilePhone,
+        		u.createTime
+        from user u 
+        where u.userCount = #{userCount}
+    </select>
+    	<insert id="insertAreaCodeCity" parameterType="myWorld.entity.AreaCodeCityVO" 
+						useGeneratedKeys="true" keyProperty="id">
+		insert into area_code_city_new
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="provCode != null">prov_code,</if>
+			<if test="provName != null">prov_name,</if>
+			<if test="cityCode != null">city_code,</if>
+			<if test="cityName != null">city_name,</if>	
+			<if test="areaCode != null">area_code,</if>	
+			<if test="areaName != null">area_name,</if>	
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="provCode != null">#{provCode},</if>
+			<if test="provName != null">#{provName},</if>
+			<if test="cityCode != null">#{cityCode},</if>
+			<if test="cityName != null">#{cityName},</if>
+			<if test="areaCode != null">#{areaCode},</if>
+			<if test="areaName != null">#{areaName},</if>
+		</trim>
+	</insert>
+	
+</mapper>

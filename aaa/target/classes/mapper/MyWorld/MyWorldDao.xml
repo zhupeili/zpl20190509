@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="myWorld.dao.MyWorldDao">
+	
+	<sql id="Base_Column_List">
+		t.resource_id as resourceId,
+		t.lbs as lbs,
+		l.dict_value as
+		lbsName,
+		t.imei as imei,
+		t.imsi as imsi,
+		t.name as name,
+		t.owner as owner,
+		t.msisdn as msisdn,
+		t.status as status,
+		t.org_id as orgId,
+		t.flag_ids as flagIds,
+		t.flag_names as flagNames,
+		t.approver_status as approverStatus,
+		DATE_FORMAT(t.create_time,'%Y-%m-%d %H:%i:%S') as
+		createTime,
+		DATE_FORMAT(t.end_time,'%Y-%m-%d %H:%i:%S') as endTime
+	</sql>
+	 <sql id="Base_Column_List1">
+        t.resource_id  as resourceId,
+        t.area_name as areaName,
+        t.owner as owner,
+        t.area_source_type as areaSourceType,
+        t.system_id as systemId,
+        t.org_id as orgId,
+        t.acreage as acreage,
+        t.approver_status as approverStatus,
+        t.operate_time as operateTime
+    </sql>
+
+    <select id="selectById" parameterType="myWorld.entity.WoodVO"
+
+        resultType="String">
+
+        select u.user_name as userName from user u where u.user_name = 'admin0002'
+
+    </select>
+    
+        <select id="selectByName" parameterType="myWorld.entity.GoalMsisdnVO"
+
+        resultType="myWorld.entity.GoalMsisdnVO">
+
+        select
+		<include refid="Base_Column_List" />
+		from goal_msisdn t
+		left join dictionary l on l.dict_key = t.lbs and
+		l.dict_type ='isControl'
+		left join dictionary s on s.dict_key =
+		t.status and s.dict_type ='isValid'
+
+    </select>
+    <select id="selectTicket" parameterType="myWorld.entity.AuditList_QhVO"
+
+        resultType="myWorld.entity.AuditList_QhVO">
+    
+    				SELECT * FROM(
+		SELECT a.* ,
+			b.approver_time as approverTime,
+			b.approver_status as approverStatus,
+			b.is_add as isAdd
+		FROM
+		(
+		SELECT 
+			(SELECT	
+				a.approver AS approver
+			FROM approval a
+			LEFT JOIN task_base_info t ON a.task_base_info_id = t.resource_id
+			WHERE a.task_base_info_id = 249 AND a.approver !=''
+			ORDER BY
+			FIELD(a.approver_time,NULL,a.approver_time),a.approver_time desc LIMIT 1) as approver,
+			a.taskBaseId,
+			a.taskName,
+			a.beginTime,
+			a.endTime,
+			a.taskStatus,
+			MAX(a.owner) as owner,
+			MAX(a.taskCreateTime) as taskCreateTime,
+			MAX(a.orgId) as orgId,
+			MAX(a.goalCount) as taskTargetCount,
+			MAX(a.areaCount) as taskAreaCount,
+			MAX(a.taskUser)  as taskUser,
+			MAX(a.greenChannel) AS greenChannel
+		FROM (
+		SELECT 
+			t.resource_id as taskBaseId,
+			t.`name` as taskName,
+			t.begin_time beginTime,
+			t.end_time as endTime,
+			t.task_status as taskStatus,
+			(SELECT u.user_nick FROM `user` u 
+					WHERE u.user_name = SUBSTR(t.`owner`,2)) as owner,
+			t.task_create_time as taskCreateTime,
+		 	COUNT(g.resource_id) as goalCount,
+			0 as areaCount,
+			'' as taskUser,
+			t.org_id as orgId,
+			t.green_channel AS greenChannel
+		FROM
+		 task_base_info t
+		LEFT JOIN goal_msisdn g ON CONCAT('T', t.resource_id) = g. OWNER
+		GROUP BY t.`name`
+		UNION 
+		SELECT 
+			t.resource_id as taskBaseId,
+			t.`name` as taskName,
+			t.begin_time beginTime,
+			t.end_time as endTime,
+			t.task_status as taskStatus,
+			'' as owner,
+			'' as taskCreateTime,
+			0 as goalCount,
+			COUNT(aa.resource_id) as areaCount,
+			'' as taskUser,
+			'' as orgId,
+			'' AS greenChannel
+		FROM
+		 task_base_info t
+		 	LEFT JOIN area_base_info aa ON CONCAT('T', t.resource_id) = aa. OWNER
+		GROUP BY t.`name`
+		UNION
+		SELECT 
+			t.resource_id as taskBaseId,
+			t.`name` as taskName,
+			t.begin_time beginTime,
+			t.end_time as endTime,
+			t.task_status as taskStatus,
+			'' as owner,
+			'' as taskCreateTime,
+			0 as goalCount,
+			0 as areaCount,
+			GROUP_CONCAT( DISTINCT
+										us.user_nick
+										order by
+											us.user_nick
+									)  as taskUser,
+			'' as orgId,
+			'' AS greenChannel
+		FROM
+		 task_base_info t 
+		LEFT JOIN task_user tu on  t.resource_id = tu.task_base_info_id
+		LEFT JOIN user us ON us.resource_id = tu.user_id 
+		GROUP BY t.`name`
+		) a
+		GROUP BY taskBaseId
+		) a 
+		RIGHT JOIN approval b ON a.taskBaseId = b.task_base_info_id
+		WHERE a.taskName !=''
+		ORDER BY
+		FIELD(b.approver_time,NULL,b.approver_time),b.approver_time desc LIMIT 100000000
+		) a
+		where a.taskBaseId = 249
+	GROUP BY a.taskBaseId LIMIT #{start},#{rows}
+    </select>
+    <select id="selectTicket11" parameterType="myWorld.entity.GoalAreaVO"
+
+        resultType="myWorld.entity.GoalAreaVO">
+		 select
+        <include refid="Base_Column_List1"/>
+        from area_base_info t
+		</select>
+<insert id="insertUser" parameterType="myWorld.entity.UserVO" 
+						useGeneratedKeys="true" keyProperty="id">
+		insert into user
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="userCount != null">userCount,</if>
+			<if test="pwd != null">pwd,</if>
+			<if test="realName != null">realName,</if>
+			<if test="e_mail != null">e_mail,</if>	
+			<if test="mobilePhone != null">mobilePhone,</if>	
+			<if test="qq != null">qq,</if>	
+			<if test="age != null">age,</if>
+			<if test="sex != null">sex,</if>
+								createTime,			
+			
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="userCount != null">#{userCount},</if>
+			<if test="pwd != null">#{pwd},</if>
+			<if test="realName != null">#{realName},</if>
+			<if test="e_mail != null">#{e_mail},</if>
+			<if test="mobilePhone != null">#{mobilePhone},</if>
+			<if test="qq != null">#{qq},</if>
+			<if test="age != null">#{age},</if>
+			<if test="sex != null">#{sex},</if>
+								now(),
+		</trim>
+	</insert>
+	<select id="selectUser" parameterType="myWorld.entity.UserVO"
+        resultType="myWorld.entity.UserVO">
+        select 	u.userCount,
+        		u.realName,
+        		u.pwd,
+        		u.e_mail,
+        		u.sex,
+        		u.age,
+        		u.mobilePhone,
+        		u.createTime
+        from user u 
+        where u.userCount = #{userCount}
+    </select>
+    <insert id="insertAreaCodeCity" parameterType="myWorld.entity.AreaCodeCityVO" 
+						useGeneratedKeys="true" keyProperty="id">
+		insert into area_code_city_new
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="provCode != null">prov_code,</if>
+			<if test="provName != null">prov_name,</if>
+			<if test="cityCode != null">city_code,</if>
+			<if test="cityName != null">city_name,</if>	
+			<if test="areaCode != null">area_code,</if>	
+			<if test="areaName != null">area_name,</if>	
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="provCode != null">#{provCode},</if>
+			<if test="provName != null">#{provName},</if>
+			<if test="cityCode != null">#{cityCode},</if>
+			<if test="cityName != null">#{cityName},</if>
+			<if test="areaCode != null">#{areaCode},</if>
+			<if test="areaName != null">#{areaName},</if>
+		</trim>
+	</insert>
+	<update id="updateAreaCodeCity" parameterType="myWorld.entity.AreaCodeCityVO">
+		UPDATE area_code_city_new SET city_name = #{cityName} WHERE city_code = #{cityCode}
+	
+	</update>
+	<select id="selectNumber" parameterType="myWorld.entity.NumberVO"
+        resultType="myWorld.entity.NumberVO">
+		SELECT DISTINCT a.city_name FROM number_code_201806_copy a
+	</select>
+	<update id="updateNumber" parameterType="myWorld.entity.NumberVO">
+		UPDATE number_code_201806_copy SET city_code = #{city_code} WHERE city_name = #{city_name}
+	</update>
+		<select id="selectMsisdn" parameterType="myWorld.entity.NumberVO"
+        resultType="String">
+		SELECT DISTINCT a.code FROM test a
+	</select>
+</mapper>

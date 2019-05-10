@@ -1,0 +1,17 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: aaa
+Bundle-SymbolicName: aaa
+Bundle-Version: 1.0.0.qualifier
+Export-Package: common.dao,
+ config,
+ myWorld.controller,
+ myWorld.dao,
+ myWorld.dao.imp,
+ myWorld.entity,
+ myWorld.service,
+ myWorld.service.imp,
+ myWorld.utils,
+ spring.test,
+ src.test
+Require-Bundle: org.junit
